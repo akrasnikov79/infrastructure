@@ -17,7 +17,7 @@ services:
       KC_DB_SCHEMA: public
 
       KC_HOSTNAME: 185.56.162.137
-      KC_HOSTNAME_ADMIN: 185.56.162.137
+      KC_HOSTNAME_ADMIN: localhost
       KC_PROXY_HEADERS: xforwarded
       KC_PROXY: edge    
       KC_HTTP_ENABLED: "true"
