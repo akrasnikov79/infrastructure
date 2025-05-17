@@ -40,7 +40,7 @@ services:
     volumes:
       - ./nginx.conf:/etc/nginx/nginx.conf:ro
     depends_on:
-      - keycloak
+      - keycloak_container
     networks:
       - keycloak-network
 
