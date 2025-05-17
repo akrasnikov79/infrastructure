@@ -16,7 +16,7 @@ services:
       KC_DB_PASSWORD: admin
       KC_DB_SCHEMA: public
 
-      KC_HOSTNAME: 185.56.162.137
+      KC_HOSTNAME: "185.56.162.137"
       # KC_HOSTNAME_ADMIN: localhost
       KC_HOSTNAME_STRICT: "false"
       KC_HOSTNAME_STRICT_HTTPS: "false"
