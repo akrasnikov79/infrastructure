@@ -1,0 +1,48 @@
+version: '3.9'
+
+services:
+  keycloak:
+    image: quay.io/keycloak/keycloak:24.0.1
+    container_name: keycloak
+    environment:
+      KEYCLOAK_ADMIN: admin
+      KEYCLOAK_ADMIN_PASSWORD: admin
+
+      KC_HTTP_ENABLED: "true"
+      KC_PROXY: edge
+      KC_HOSTNAME_STRICT: "false"
+
+      KC_DB: postgres
+      KC_DB_URL_HOST: postgres-container
+      KC_DB_URL_PORT: 5433
+      KC_DB_URL_DATABASE: keycloak-db
+      KC_DB_USERNAME: admin
+      KC_DB_PASSWORD: admin
+      KC_DB_SCHEMA: public
+
+    command: start-dev
+    restart: always
+    ports:
+      - "8080:8080"
+    networks:
+      - keycloak-network
+      - infrastructure  # подключаем вторую сеть
+
+  nginx:
+    image: nginx:1.25
+    container_name: nginx
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - keycloak
+    networks:
+      - keycloak-network
+
+networks:
+  keycloak-network:
+    driver: bridge
+    
+  infrastructure:
+    external: true  #  что такая сеть уже существует
