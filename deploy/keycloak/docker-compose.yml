@@ -20,7 +20,12 @@ services:
       KC_DB_PASSWORD: admin
       KC_DB_SCHEMA: public
 
-    command: start-dev
+    command: >
+      start-dev
+      --http-enabled=true
+      --proxy=edge
+      --hostname-strict=false
+      
     restart: always
     ports:
       - "8080:8080"
