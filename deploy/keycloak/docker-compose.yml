@@ -2,7 +2,7 @@ version: '3.9'
 
 services:
   keycloak:
-    image: quay.io/keycloak/keycloak:24.0.1
+    image: quay.io/keycloak/keycloak:26.2.4
     container_name: keycloak
     environment:
       KEYCLOAK_ADMIN: admin
@@ -12,6 +12,9 @@ services:
       KC_PROXY: edge
       KC_HOSTNAME_STRICT: "false"
 
+      KC_HOSTNAME: localhost
+      KC_HOSTNAME_PORT: 8080
+
       KC_DB: postgres
       KC_DB_URL_HOST: postgres-container
       KC_DB_URL_PORT: 5433
@@ -20,12 +23,8 @@ services:
       KC_DB_PASSWORD: admin
       KC_DB_SCHEMA: public
 
-    command: >
-      start-dev
-      --http-enabled=true
-      --proxy=edge
-      --hostname-strict=false
-      
+    command: start-dev
+
     restart: always
     ports:
       - "8080:8080"
