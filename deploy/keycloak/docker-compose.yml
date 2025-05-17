@@ -43,6 +43,6 @@ services:
 networks:
   keycloak-network:
     driver: bridge
-    
+
   infrastructure:
-    external: true  #  что такая сеть уже существует
+    driver: bridge  #  что такая сеть уже существует
