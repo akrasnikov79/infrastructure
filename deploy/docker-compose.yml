@@ -1,0 +1,28 @@
+version: '3.9'
+
+services:
+  proxy-keycloak:
+    container_name: proxy-keycloak
+    image: services/services.proxy.keycloak:1.0
+    ports:
+      - "9090:9090"
+    build:
+      context: .
+      dockerfile: ./src/Proxy.Keycloak.Web/Dockerfile
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      # - TZ=Asia/Karachi
+    restart: always
+    
+      
+
+volumes:
+  services_volume:
+    driver_opts:
+      type: none
+      device: /var/services
+      o: bind
+  
+
+networks:
+  infrastructure:
