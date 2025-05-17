@@ -42,7 +42,4 @@ services:
 
 networks:
   keycloak-network:
-    driver: bridge
-
-  infrastructure:
-    driver: bridge  #  что такая сеть уже существует
+    driver: bridge 
