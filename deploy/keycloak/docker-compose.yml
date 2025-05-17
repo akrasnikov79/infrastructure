@@ -16,20 +16,20 @@ services:
       KC_DB_PASSWORD: admin
       KC_DB_SCHEMA: public
 
-      KC_HOSTNAME: "185.56.162.137"
-      # KC_HOSTNAME_ADMIN: localhost
-      KC_HOSTNAME_STRICT: "false"
-      KC_HOSTNAME_STRICT_HTTPS: "false"
-      KC_DISABLE_FEATURES: "admin-fine-grained-authz" # disable fine-grained authz
-      KC_PROXY_ENABLED: "true"
-      KC_PROXY_PORT: 8080
-      KC_PROXY_PROTOCOL: http
-      KC_PROXY_SSL: none 
-      # KC_PROXY_HEADERS: xforwarded
-      KC_PROXY: edge      
-      KC_HTTP_ENABLED: "true"
-      # KC_HTTP_PORT: 8080
-      KC_METRICS_ENABLED: "true"
+      # KC_HOSTNAME: "185.56.162.137"
+      # # KC_HOSTNAME_ADMIN: localhost
+      # KC_HOSTNAME_STRICT: "false"
+      # KC_HOSTNAME_STRICT_HTTPS: "false"
+      # KC_DISABLE_FEATURES: "admin-fine-grained-authz" # disable fine-grained authz
+      # KC_PROXY_ENABLED: "true"
+      # KC_PROXY_PORT: 8080
+      # KC_PROXY_PROTOCOL: http
+      # KC_PROXY_SSL: none 
+      # # KC_PROXY_HEADERS: xforwarded
+      # KC_PROXY: edge      
+      # KC_HTTP_ENABLED: "true"
+      # # KC_HTTP_PORT: 8080
+      # KC_METRICS_ENABLED: "true"
       
 
     command: start-dev       
