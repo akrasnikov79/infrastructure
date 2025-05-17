@@ -18,7 +18,8 @@ services:
 
       KC_HOSTNAME: 185.56.162.137
       KC_HOSTNAME_ADMIN: 185.56.162.137
-      KC_PROXY_HEADERS: xforwarded       
+      KC_PROXY_HEADERS: xforwarded
+      KC_PROXY: edge    
       KC_HTTP_ENABLED: "true"
       KC_HTTP_PORT: 8080
       KC_METRICS_ENABLED: "true"
