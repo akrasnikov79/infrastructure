@@ -42,6 +42,21 @@ services:
       - keycloak-network
       - infrastructure_infrastructure  # подключаем вторую сеть
 
+  vault:
+    image: hashicorp/vault:latest
+    container_name: vault
+    ports:
+      - "8200:8200"
+    networks:
+      - keycloak-network
+             
+    environment:
+      - VAULT_DEV_ROOT_TOKEN_ID=myroot
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    cap_add:
+      - IPC_LOCK
+    command: vault server -dev
+
   nginx:
     image: nginx:1.25
     container_name: nginx
