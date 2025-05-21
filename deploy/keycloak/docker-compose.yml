@@ -16,7 +16,7 @@ services:
     
     ports:
       - "8200:8200"
-    networks:      
+    networks:
       - infrastructure_infrastructure  # подключаем вторую сеть
   
   # nginx:
@@ -32,4 +32,4 @@ services:
 
   networks:
     infrastructure_infrastructure:
-         external: true 
+      external: true 
