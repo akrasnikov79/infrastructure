@@ -29,7 +29,6 @@ services:
   #   depends_on:
   #     - vault
 
-  networks: 
-  
-  infrastructure_infrastructure:         
-    external: true 
+  networks:
+    infrastructure_infrastructure:
+     external: true 
