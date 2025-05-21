@@ -1,5 +1,5 @@
 storage "postgresql" {
-  connection_url = "postgresql://admin:admin@postgres:5433/vaultdb?sslmode=disable"
+  connection_url = "postgresql://admin:admin@postgres-container:5433/vaultdb?sslmode=disable"
 }
 
 listener "tcp" {
