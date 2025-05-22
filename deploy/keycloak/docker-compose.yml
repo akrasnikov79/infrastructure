@@ -27,5 +27,9 @@ services:
       - infrastructure-network   
       
 networks: 
+  keycloak-network:
+    name: keycloak-network
+    driver: bridge
+
   infrastructure-network:
       external: true 
