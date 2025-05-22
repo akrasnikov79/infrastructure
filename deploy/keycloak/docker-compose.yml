@@ -57,6 +57,7 @@ services:
 
 networks:
   infrastructure-network:
+    name: infrastructure-network
     driver: bridge 
 
   infrastructure_infrastructure:
