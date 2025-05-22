@@ -44,7 +44,7 @@ services:
       - infrastructure_infrastructure  # подключаем вторую сеть
 
   nginx:
-    image: nginx:alpine
+    image: nginx:1.25
     container_name: nginx
     ports:
       - "80:80"
