@@ -88,6 +88,6 @@ volumes:
   redis-data:
 
 networks:
-  persistence-network:
+  infrastructure-network:
     name: infrastructure-network
     driver: bridge
