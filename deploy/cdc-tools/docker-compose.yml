@@ -125,7 +125,7 @@ networks:
     driver: bridge
 
   infrastructure-network:
-    external: true 
+    driver: bridge 
 
 volumes:
   oracle-data:
