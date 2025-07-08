@@ -72,7 +72,7 @@ services:
 
     volumes:
       - redis-data:/data
-    command: redis-server --requirepass ${REDIS_PASSWORD:-beelab}
+    # command: redis-server --requirepass ${REDIS_PASSWORD:-beelab}
     environment:
       - REDIS_PORT=6379
       - REDIS_DATABASES=16
