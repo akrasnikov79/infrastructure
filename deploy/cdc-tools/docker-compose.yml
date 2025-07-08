@@ -1,0 +1,132 @@
+version: '3.8'
+
+services:
+  oracle-xe:
+    image: gvenzl/oracle-xe:21
+    container_name: oracle-xe
+    environment:
+      - ORACLE_PASSWORD=oracle
+      - ORACLE_CHARACTERSET=AL32UTF8
+    ports:
+      - "1521:1521"
+    volumes:
+      - oracle-data:/opt/oracle/oradata
+      - oracle-archive:/opt/oracle/oradata/XE/archive
+      - ./oracle/init:/docker-entrypoint-initdb.d/startup
+    healthcheck:
+      test: ["CMD", "sqlplus", "-L", "system/oracle@//localhost:1521/XEPDB1", "AS", "SYSDBA", "@?/rdbms/admin/utlrp.sql"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - debezium-network
+    user: "54321:54321"  # oracle:oinstall
+    command: >
+      bash -c "
+        mkdir -p /opt/oracle/oradata/XE/archive &&
+        chown -R oracle:oinstall /opt/oracle/oradata/XE/archive &&
+        chmod -R 755 /opt/oracle/oradata/XE/archive &&
+        /etc/init.d/oracle-xe-21c start &&
+        sleep 30 &&
+        sqlplus -s system/oracle@//localhost:1521/XEPDB1 AS SYSDBA <<EOF
+        SHUTDOWN IMMEDIATE;
+        STARTUP MOUNT;
+        ALTER DATABASE ARCHIVELOG;
+        ALTER DATABASE OPEN;
+        ALTER DATABASE FORCE LOGGING;
+        ALTER SYSTEM SET log_archive_dest_1='LOCATION=/opt/oracle/oradata/XE/archive' SCOPE=MEMORY;
+        ALTER SYSTEM SET log_archive_max_processes=4 SCOPE=MEMORY;
+        ALTER SYSTEM ARCHIVE LOG CURRENT;
+        EXIT;
+        EOF
+        sleep 10 &&
+        sqlplus -s system/oracle@//localhost:1521/XEPDB1 AS SYSDBA <<EOF
+        @/docker-entrypoint-initdb.d/startup/01-init.sql
+        EXIT;
+        EOF
+        sleep 5 &&
+        sqlplus -s system/oracle@//localhost:1521/XEPDB1 AS SYSDBA <<EOF
+        SELECT log_mode FROM v$database;
+        SELECT name, value FROM v$parameter WHERE name LIKE 'log_archive%';
+        SELECT username, granted_role FROM dba_role_privs WHERE username = 'TEST_USER';
+        EXIT;
+        EOF
+        tail -f /opt/oracle/diag/rdbms/xe/XE/trace/alert_XE.log
+      "
+
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.3
+    container_name: zookeeper
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+    ports:
+      - "2181:2181"
+    networks:
+      - debezium-network
+
+  kafka:
+    image: confluentinc/cp-kafka:7.5.3
+    container_name: kafka
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - debezium-network
+
+  kafka-connect:
+    image: debezium/connect:2.5
+    container_name: kafka-connect
+    ports:
+      - "8083:8083"
+    environment:
+      BOOTSTRAP_SERVERS: kafka:29092
+      GROUP_ID: 1
+      CONFIG_STORAGE_TOPIC: my_connect_configs
+      OFFSET_STORAGE_TOPIC: my_connect_offsets
+      STATUS_STORAGE_TOPIC: my_connect_statuses
+      KEY_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
+      KEY_CONVERTER_SCHEMAS_ENABLE: "false"
+      VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
+    depends_on:
+      oracle-xe:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    networks:
+      - debezium-network
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    container_name: kafka-ui
+    ports:
+      - "8080:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    depends_on:
+      - kafka
+    networks:
+      - debezium-network
+
+networks:
+  debezium-network:
+    driver: bridge
+
+  infrastructure-network:
+    external: true 
+
+volumes:
+  oracle-data:
+  oracle-archive: 
