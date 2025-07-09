@@ -1,239 +1,259 @@
-# Oracle to Kafka CDC Replication
+# CDC Tools - Oracle Database 23c Free Edition
 
-This project sets up Change Data Capture (CDC) replication from Oracle XE to Kafka using Debezium.
+Change Data Capture tools for Oracle Database 23c Free using Kafka and Debezium.
 
-## Prerequisites
+## 🆕 Updated to Oracle Database 23c Free
 
-- Docker
-- Docker Compose
-- PowerShell (for Windows) or Bash (for Linux/Mac)
+This setup now uses the latest `gvenzl/oracle-free` Docker image which provides:
+- Oracle Database 23c Free Edition
+- Better performance and security
+- Regular updates and patches
+- Improved CDC capabilities
+- No more outdated image warnings!
+
+## Components
+
+- **Oracle Database 23c Free** - Latest Oracle database
+- **Apache Kafka** - Event streaming platform
+- **Kafka Connect with Debezium** - CDC connector
+- **Kafka UI** - Web interface for monitoring
+- **Zookeeper** - Kafka coordination service
 
 ## Architecture
 
-The solution consists of the following components:
-- Oracle XE 21c - Source database
-- Apache Kafka - Message broker
-- Debezium - CDC connector
-- Kafka UI - Web interface for monitoring
-
-## Setup Instructions
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd <repository-directory>
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│ Oracle Free 23c │───▶│ Debezium Connect │───▶│ Apache Kafka    │
+│ (CDC Source)    │    │ (Change Capture) │    │ (Event Stream)  │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                │                        │
+                                ▼                        ▼
+                       ┌──────────────────┐    ┌─────────────────┐
+                       │ Kafka UI         │    │ Your Apps       │
+                       │ (Monitoring)     │    │ (Consumers)     │
+                       └──────────────────┘    └─────────────────┘
 ```
 
-2. Start the services:
+## Database Structure
+
+### 📁 DDL (Schema) - `/oracle/init/`
+- `00-init-schema.sql` - Creates MOBILE schema and CDC setup
+- `CLIENTS.sql`, `MODULES.sql`, etc. - Table definitions only
+- `99-run-all-ddl.sql` - Executes all DDL scripts
+
+### 📁 DML (Data) - `/oracle/data/`  
+- `*_data.sql` - Initial data for tables (separated from structure)
+- `99-load-all-data.sql` - Loads all data
+
+## Quick Start
+
+### 1. Start All Services
 ```bash
 docker-compose up -d
 ```
 
-3. Wait for Oracle to initialize (3-5 minutes). You can check the status with:
+### 2. Monitor Oracle Startup
 ```bash
-docker-compose ps
+docker logs oracle-free-local -f
 ```
+Wait for: `"Oracle Database is ready for CDC!"`
 
-4. Verify Oracle connection:
+### 3. Verify Database Setup
 ```bash
-docker exec -it oracle-xe sqlplus test_user/test_password@//localhost:1521/XEPDB1
+# Connect to Oracle
+docker exec -it oracle-free-local sqlplus MOBILE/mobile123@//localhost:1521/FREEPDB1
+
+# Check created tables
+SQL> SELECT table_name FROM user_tables ORDER BY table_name;
+
+# Verify data is loaded
+SQL> SELECT COUNT(*) FROM MODULES;
+SQL> SELECT COUNT(*) FROM USERS;
 ```
 
-5. Create the Debezium connector:
-```powershell
-# For Windows PowerShell
-curl.exe -X POST -H "Content-Type: application/json" --data @oracle-connector.json http://localhost:8083/connectors
+### 4. Access Kafka UI
+- **URL:** http://localhost
+- Monitor topics and connectors
 
-# For Linux/Mac
-curl -X POST -H "Content-Type: application/json" --data @oracle-connector.json http://localhost:8083/connectors
+## Database Connections
+
+### MOBILE Schema (Main)
+- **Host:** localhost
+- **Port:** 1522
+- **Service:** FREEPDB1
+- **Schema:** MOBILE
+- **User:** MOBILE
+- **Password:** mobile123
+
+### System Admin
+- **User:** system
+- **Password:** oracle
+- **Service:** FREEPDB1
+
+## CDC Configuration
+
+### Register Oracle Connector
+```bash
+curl -X POST \
+  http://localhost:8083/connectors \
+  -H 'Content-Type: application/json' \
+  -d @oracle-connector.json
 ```
 
-## Verification Steps
+### Monitor CDC Status
+```bash
+# Check connector status
+curl http://localhost:8083/connectors/oracle-free-connector/status
 
-After connecting to Oracle, you can verify the setup using the following SQL queries:
+# List all connectors
+curl http://localhost:8083/connectors
 
-1. Check the created table:
+# View Kafka topics
+docker exec kafka-local kafka-topics --list --bootstrap-server localhost:9092
+```
+
+## Tables Monitored for CDC
+
+The following tables are configured for Change Data Capture:
+
+| Table | Description | Records |
+|-------|-------------|---------|
+| `MOBILE.CLIENTS` | Client information | 3 |
+| `MOBILE.USERS` | User accounts | 5 |
+| `MOBILE.MODULES` | Application modules | 17 |
+| `MOBILE.MODULES_ACT` | Module actions | 38 |
+| `MOBILE.ROLES` | User roles | 7 |
+| `MOBILE.ROLES_ACT` | Role actions | 152 |
+| `MOBILE.UC` | User-client relationships | 5 |
+
+## Testing CDC
+
+### 1. Make Database Changes
 ```sql
--- View table structure
-DESC test_table;
+-- Connect to MOBILE schema
+CONNECT MOBILE/mobile123@//localhost:1521/FREEPDB1;
 
--- View table data
-SELECT * FROM test_table;
+-- Insert new client
+INSERT INTO CLIENTS (ID, BRANCH, CLIENT, CREATED, STATE, TARIF, ABS) 
+VALUES (9999, '00999', '99999999', SYSDATE, 1, null, 1);
 
--- Check table privileges
-SELECT * FROM user_tab_privs WHERE table_name = 'TEST_TABLE';
+-- Update user
+UPDATE USERS SET NAME = 'Updated User Name' WHERE ID = 95577;
+
+-- Delete a module action
+DELETE FROM MODULES_ACT WHERE MODULE_ID = 208 AND ACTION_ID = 1;
+
+COMMIT;
 ```
 
-2. Check user privileges:
-```sql
--- View system privileges
-SELECT * FROM session_privs;
+### 2. Monitor Changes in Kafka
+- Open Kafka UI: http://localhost
+- Check topics: `oracle-free.MOBILE.CLIENTS`, `oracle-free.MOBILE.USERS`, etc.
+- View change events in real-time
 
--- View object privileges
-SELECT * FROM user_tab_privs;
+## File Structure
 
--- View all granted privileges
-SELECT * FROM dba_sys_privs WHERE grantee = 'TEST_USER';
+```
+deploy/cdc-tools/
+├── docker-compose.yml               # Updated for Oracle Free
+├── oracle-connector.json            # Updated connector config
+├── README.md                        # This file
+├── oracle/
+│   ├── init/                        # Empty (not used)
+│   └── data/                        # All scripts (executed in alphabetical order)
+│       ├── 00-create-schema-and-tables.sql  # Creates MOBILE schema and all tables
+│       ├── CLIENTS_data.sql         # Client data (3 records)
+│       ├── MODULES_data.sql         # Module data (17 records)
+│       ├── MODULES_ACT_data.sql     # Module actions (38 records)
+│       ├── ROLES_data.sql           # Role definitions (7 records)
+│       ├── ROLES_ACT_data.sql       # Role permissions (152 records)
+│       ├── UC_data.sql              # User-client relationships (5 records)
+│       ├── USERS_data.sql           # User accounts (5+ records)
+│       └── 99-load-all-data.sql     # Data loading orchestrator
+└── kafka-connect/
+    └── oracle-connector.json
 ```
 
-3. Check user roles:
-```sql
--- View assigned roles
-SELECT * FROM session_roles;
+### Key Architecture Changes
 
--- View role privileges
-SELECT * FROM role_sys_privs WHERE role IN (
-    SELECT granted_role FROM dba_role_privs WHERE grantee = 'TEST_USER'
-);
+- **Single Schema File:** All DDL consolidated in `00-create-schema-and-tables.sql`
+- **Execution Order:** Docker executes scripts alphabetically, DDL first (00-), then data
+- **Enhanced Column Sizes:** Increased VARCHAR2 sizes to handle longer text data
+- **Automatic Setup:** No manual intervention needed, everything runs automatically
 
--- View detailed role information
-SELECT 
-    rp.granted_role,
-    rp.admin_option,
-    rp.default_role
-FROM dba_role_privs rp
-WHERE rp.grantee = 'TEST_USER';
-```
+## Port Mappings
 
-## Testing the Setup
-
-1. Execute test data changes:
-```bash
-docker exec -i oracle-xe sqlplus test_user/test_password@//localhost:1521/XEPDB1 @test-replication.sql
-```
-
-2. Monitor the changes in Kafka UI:
-- Open http://localhost:8080 in your browser
-- Navigate to Topics
-- Look for the topic `oracle.TEST_USER.TEST_TABLE`
-
-## Configuration Files
-
-### docker-compose.yml
-Contains the configuration for all services:
-- Oracle XE
-- Zookeeper
-- Kafka
-- Kafka Connect (Debezium)
-- Kafka UI
-
-### oracle-connector.json
-Debezium connector configuration for Oracle CDC.
-
-### oracle/init/01-init.sql
-Oracle initialization script that:
-- Creates test_user
-- Grants necessary privileges
-- Creates test table
-- Inserts sample data
-
-### test-replication.sql
-Test script for data changes:
-- Inserts new records
-- Updates existing records
-- Deletes records
-
-## Monitoring
-
-1. Check Oracle logs:
-```bash
-docker-compose logs -f oracle-xe
-```
-
-2. Check Debezium logs:
-```bash
-docker-compose logs -f kafka-connect
-```
-
-3. Access Kafka UI:
-- URL: http://localhost:8080
-- Features:
-  - Topic browsing
-  - Message inspection
-  - Consumer group monitoring
-  - Broker status
+| Service | Internal Port | External Port | Purpose |
+|---------|---------------|---------------|---------|
+| Oracle Free | 1521 | 1522 | Database connection |
+| Kafka | 29092 | 9092 | Kafka broker |
+| Kafka Connect | 8083 | 8083 | REST API |
+| Kafka UI | 8080 | 80 | Web interface |
+| Zookeeper | 2181 | 2181 | Coordination |
 
 ## Troubleshooting
 
-### Common Issues
-
-1. Oracle Connection Issues:
+### Oracle Issues
 ```bash
-# Check Oracle status
-docker-compose ps oracle-xe
+# Check Oracle container status
+docker ps | grep oracle-free
 
-# Check Oracle logs
-docker-compose logs oracle-xe
+# View Oracle logs
+docker logs oracle-free-local -f
+
+# Connect to check database
+docker exec -it oracle-free-local sqlplus system/oracle@//localhost:1521/FREEPDB1
 ```
 
-2. Debezium Connector Issues:
+### Kafka Connect Issues
 ```bash
 # Check connector status
-curl http://localhost:8083/connectors/oracle-connector/status
+curl http://localhost:8083/connectors/oracle-free-connector/status
 
-# Check connector logs
-docker-compose logs kafka-connect
+# View connector logs
+docker logs kafka-connect-local -f
+
+# Restart connector
+curl -X POST http://localhost:8083/connectors/oracle-free-connector/restart
 ```
 
-3. Kafka Issues:
+### Complete Reset
 ```bash
-# Check Kafka status
-docker-compose ps kafka
-
-# Check Kafka logs
-docker-compose logs kafka
-```
-
-### Reset Environment
-
-To start fresh:
-```bash
-# Stop all services and remove volumes
+# Stop everything and remove volumes
 docker-compose down -v
 
-# Start services again
+# Remove Oracle data (if needed)
+docker volume rm cdc-tools_oracle-data-local cdc-tools_oracle-archive-local
+
+# Start fresh
 docker-compose up -d
 ```
 
-## Ports
+## Performance Notes
 
-- Oracle: 1521
-- Kafka: 9092
-- Kafka Connect: 8083
-- Kafka UI: 8080
-- Zookeeper: 2181
+- **Oracle Free Limits:** 2 CPUs, 2GB RAM, 12GB data
+- **Archive Logging:** Enabled for CDC
+- **Supplemental Logging:** Configured for all tables
+- **LogMiner Strategy:** Online catalog for better performance
+- **Connection Pooling:** Recommended for production use
 
-## Security Notes
+## What's New in Oracle 23c Free
 
-- Default credentials are used for demonstration purposes
-- In production, use secure passwords and proper security measures
-- Consider using secrets management for sensitive data
+✅ **Latest Oracle Database features**  
+✅ **Improved JSON support**  
+✅ **Better performance**  
+✅ **Enhanced security**  
+✅ **No more deprecation warnings**  
+✅ **Regular security updates**  
 
-## Maintenance
+## Migration from Oracle XE
 
-### Backup
-```bash
-# Backup Oracle data
-docker exec oracle-xe expdp system/oracle@//localhost:1521/XEPDB1 directory=DATA_PUMP_DIR dumpfile=backup.dmp
-```
+The migration includes:
+- **Updated Docker image:** `gvenzl/oracle-free:latest`
+- **Service name:** `FREEPDB1` (was `XEPDB1`)
+- **Container name:** `oracle-free-local` (was `oracle-xe-local`)
+- **Database name:** `FREE` (was `XE`)
+- **Enhanced CDC configuration**
+- **Separated DDL/DML scripts**
 
-### Cleanup
-```bash
-# Remove all containers and volumes
-docker-compose down -v
-
-# Remove unused volumes
-docker volume prune
-```
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Create a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details. 
+Old connections using `XEPDB1` need to be updated to use `FREEPDB1`. 
