@@ -1,0 +1,75 @@
+ 
+services: 
+
+  postgres-container:
+    container_name: postgres-container
+    image: postgres:15-alpine
+    restart: unless-stopped
+    
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=admin
+      - PGPORT=5433
+    ports:
+      - "5433:5433"
+    networks:
+      - infrastructure-network
+    
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U pgadmin"]
+      interval: 10s
+      timeout: 5s
+      retries: 5 
+
+  oracle-free-local:
+    image: gvenzl/oracle-free:latest
+    container_name: oracle-free-local
+    environment:
+      - ORACLE_PASSWORD=oracle
+      - ORACLE_CHARACTERSET=AL32UTF8
+      - APP_USER=mobile
+      - APP_USER_PASSWORD=mobile123
+    ports:
+      - "1522:1521"
+    volumes:
+      - oracle-free-data-local:/opt/oracle/oradata
+      - oracle-free-archive-local:/opt/oracle/oradata/FREE/archive
+      - ./oracle/init:/docker-entrypoint-initdb.d/startup
+      - ./oracle/data:/docker-entrypoint-initdb.d/data
+    healthcheck:
+      test: ["CMD", "sqlplus", "-L", "system/oracle@//localhost:1521/FREEPDB1", "AS", "SYSDBA", "@?/rdbms/admin/utlrp.sql"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 120s
+    networks:
+      - debezium-network
+    command: >
+      bash -c "
+        echo 'Starting Oracle Database 23c Free...' &&
+        /opt/oracle/runOracle.sh &&
+        sleep 60 &&
+        sqlplus -s system/oracle@//localhost:1521/FREEPDB1 AS SYSDBA <<EOF
+        ALTER DATABASE ARCHIVELOG;
+        ALTER DATABASE FORCE LOGGING;
+        ALTER SYSTEM SET log_archive_dest_1='LOCATION=/opt/oracle/oradata/FREE/archive' SCOPE=MEMORY;
+        ALTER SYSTEM SET log_archive_max_processes=4 SCOPE=MEMORY;
+        ALTER SYSTEM ARCHIVE LOG CURRENT;
+        SELECT log_mode FROM v\$database;
+        SELECT name, value FROM v\$parameter WHERE name LIKE 'log_archive%';
+        EXIT;
+        EOF
+        echo 'Oracle Database is ready for CDC!' &&
+        tail -f /opt/oracle/diag/rdbms/free/FREE/trace/alert_FREE.log
+      "
+
+volumes:
+  postgres-data: 
+  oracle-free-data-local:
+  oracle-free-archive-local:  
+
+networks:
+  infrastructure-network:
+    external: true 

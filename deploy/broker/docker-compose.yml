@@ -1,46 +1,24 @@
+version: '3.9'
 
-services:
-  oracle-free-local:
-    image: gvenzl/oracle-free:latest
-    container_name: oracle-free-local
-    environment:
-      - ORACLE_PASSWORD=oracle
-      - ORACLE_CHARACTERSET=AL32UTF8
-      - APP_USER=mobile
-      - APP_USER_PASSWORD=mobile123
+services:   
+  rabbitmq:
+    image: rabbitmq:3.11-management
+    container_name: rabbitmq
+    restart: unless-stopped
+    
     ports:
-      - "1522:1521"
+      - "5672:5672"
+      - "15672:15672"
+    networks:
+      - infrastructure-network
+    
     volumes:
-      - oracle-free-data-local:/opt/oracle/oradata
-      - oracle-free-archive-local:/opt/oracle/oradata/FREE/archive
-      - ./oracle/init:/docker-entrypoint-initdb.d/startup
-      - ./oracle/data:/docker-entrypoint-initdb.d/data
+      - rabbitmq_data:/var/lib/rabbitmq
     healthcheck:
-      test: ["CMD", "sqlplus", "-L", "system/oracle@//localhost:1521/FREEPDB1", "AS", "SYSDBA", "@?/rdbms/admin/utlrp.sql"]
+      test: ["CMD", "rabbitmq-diagnostics", "check_port_connectivity"]
       interval: 30s
       timeout: 10s
-      retries: 5
-      start_period: 120s
-    networks:
-      - debezium-network
-    command: >
-      bash -c "
-        echo 'Starting Oracle Database 23c Free...' &&
-        /opt/oracle/runOracle.sh &&
-        sleep 60 &&
-        sqlplus -s system/oracle@//localhost:1521/FREEPDB1 AS SYSDBA <<EOF
-        ALTER DATABASE ARCHIVELOG;
-        ALTER DATABASE FORCE LOGGING;
-        ALTER SYSTEM SET log_archive_dest_1='LOCATION=/opt/oracle/oradata/FREE/archive' SCOPE=MEMORY;
-        ALTER SYSTEM SET log_archive_max_processes=4 SCOPE=MEMORY;
-        ALTER SYSTEM ARCHIVE LOG CURRENT;
-        SELECT log_mode FROM v\$database;
-        SELECT name, value FROM v\$parameter WHERE name LIKE 'log_archive%';
-        EXIT;
-        EOF
-        echo 'Oracle Database is ready for CDC!' &&
-        tail -f /opt/oracle/diag/rdbms/free/FREE/trace/alert_FREE.log
-      "
+      retries: 3 
 
   zookeeper-local:
     image: confluentinc/cp-zookeeper:7.5.3
@@ -107,13 +85,12 @@ services:
     networks:
       - debezium-network
 
+volumes: 
+  rabbitmq_data: 
+
 networks:
   debezium-network:
     driver: bridge
 
   infrastructure-network:
-    driver: bridge 
-
-volumes:
-  oracle-free-data-local:
-  oracle-free-archive-local: 
+    external: true 

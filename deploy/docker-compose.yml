@@ -1,0 +1,8 @@
+ 
+
+services:  
+
+networks:
+  infrastructure-network:
+    name: infrastructure-network
+    driver: bridge
