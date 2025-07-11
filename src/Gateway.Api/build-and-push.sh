@@ -3,54 +3,52 @@
 # Build and Push Docker Image to GitHub Container Registry
 # Usage: ./build-and-push.sh [version]
 
-set -e
+set -e  # Exit on any error
 
-VERSION=${1:-latest}
+# Configuration variables
 REGISTRY="ghcr.io"
 USERNAME="akrasnikov79"
 IMAGE_NAME="gateway-service"
+VERSION="${1:-latest}"
+FULL_IMAGE_PATH="${REGISTRY}/${USERNAME}/${IMAGE_NAME}:${VERSION}"
+TOKEN=""
 
-# Colors
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-RED='\033[0;31m'
-NC='\033[0m' # No Color
+echo "=== Docker Build and Push Configuration ==="
+echo "Registry: $REGISTRY"
+echo "Username: $USERNAME"
+echo "Image Name: $IMAGE_NAME"
+echo "Version: $VERSION"
+echo "Full Image Path: $FULL_IMAGE_PATH"
+echo "============================================="
 
-function echo_color() {
-    echo -e "${1}${2}${NC}"
-}
-
-# Check if GitHub token is provided
-if [[ -z "$GITHUB_TOKEN" ]]; then
-    echo_color $RED "Error: GITHUB_TOKEN environment variable is not set!"
-    echo_color $YELLOW "Set it with: export GITHUB_TOKEN='your_token_here'"
-    exit 1
-fi
-
-FULL_IMAGE_NAME="$REGISTRY/$USERNAME/$IMAGE_NAME:$VERSION"
-
-echo_color $GREEN "=== Building and Pushing Docker Image ==="
-echo_color $YELLOW "Image: $FULL_IMAGE_NAME"
+echo "🚀 Starting Docker build and push process..."
 
 # Login to GitHub Container Registry
-echo_color $GREEN "Logging in to $REGISTRY..."
-echo "$GITHUB_TOKEN" | docker login $REGISTRY -u $USERNAME --password-stdin
+echo "🔑 Logging in to GitHub Container Registry..."
+echo "$TOKEN" | docker login "$REGISTRY" -u "$USERNAME" --password-stdin
+
+echo "✅ Login successful!"
 
 # Build Docker image
-echo_color $GREEN "Building Docker image..."
-docker build -t "$FULL_IMAGE_NAME" .
+echo "🏗️  Building Docker image: $FULL_IMAGE_PATH..."
+docker build -t "$FULL_IMAGE_PATH" .
+
+echo "✅ Build successful!"
 
 # Push Docker image
-echo_color $GREEN "Pushing Docker image to registry..."
-docker push "$FULL_IMAGE_NAME"
+echo "📤 Pushing Docker image to registry..."
+docker push "$FULL_IMAGE_PATH"
 
-echo_color $GREEN "=== Successfully built and pushed $FULL_IMAGE_NAME ==="
+echo "✅ Push successful!"
+echo "🎉 Docker image published to: $FULL_IMAGE_PATH"
 
-# Optional: Tag as latest if version is not latest
-if [[ "$VERSION" != "latest" ]]; then
-    LATEST_IMAGE_NAME="$REGISTRY/$USERNAME/$IMAGE_NAME:latest"
-    echo_color $GREEN "Tagging as latest..."
-    docker tag "$FULL_IMAGE_NAME" "$LATEST_IMAGE_NAME"
-    docker push "$LATEST_IMAGE_NAME"
-    echo_color $GREEN "Also pushed as: $LATEST_IMAGE_NAME"
-fi 
+# Also tag as latest if version is not latest
+if [ "$VERSION" != "latest" ]; then
+    LATEST_IMAGE_PATH="${REGISTRY}/${USERNAME}/${IMAGE_NAME}:latest"
+    echo "🏷️  Tagging as latest: $LATEST_IMAGE_PATH..."
+    docker tag "$FULL_IMAGE_PATH" "$LATEST_IMAGE_PATH"
+    docker push "$LATEST_IMAGE_PATH"
+    echo "✅ Latest tag pushed successfully!"
+fi
+
+echo "✨ Process completed successfully!" 

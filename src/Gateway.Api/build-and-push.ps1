@@ -3,70 +3,68 @@
 # Build and Push Docker Image to GitHub Container Registry
 # Usage: ./build-and-push.ps1 [version]
 
-param(
-    [string]$Version = "latest",
-    [string]$Registry = "ghcr.io",
-    [string]$Username = "akrasnikov79",
-    [string]$ImageName = "gateway-service"
-)
+# Configuration variables
+$REGISTRY = "ghcr.io"
+$USERNAME = "akrasnikov79"
+$IMAGE_NAME = "gateway-service"
+$VERSION = if ($args.Count -gt 0) { $args[0] } else { "latest" }
+$FULL_IMAGE_PATH = "${REGISTRY}/${USERNAME}/${IMAGE_NAME}:${VERSION}"
+$TOKEN = ""
 
-# Colors for output
-$Green = "`e[32m"
-$Yellow = "`e[33m"
-$Red = "`e[31m"
-$Reset = "`e[0m"
+Write-Host "=== Docker Build and Push Configuration ===" -ForegroundColor Cyan
+Write-Host "Registry: $REGISTRY" -ForegroundColor White
+Write-Host "Username: $USERNAME" -ForegroundColor White
+Write-Host "Image Name: $IMAGE_NAME" -ForegroundColor White
+Write-Host "Version: $VERSION" -ForegroundColor White
+Write-Host "Full Image Path: $FULL_IMAGE_PATH" -ForegroundColor White
+Write-Host "=============================================" -ForegroundColor Cyan
 
-function Write-ColorOutput {
-    param([string]$Message, [string]$Color)
-    Write-Host "$Color$Message$Reset"
-}
+Write-Host "Starting Docker build and push process..." -ForegroundColor Green
 
-# Check if GitHub token is provided
-if (-not $env:GITHUB_TOKEN) {
-    Write-ColorOutput "Error: GITHUB_TOKEN environment variable is not set!" $Red
-    Write-ColorOutput "Set it with: `$env:GITHUB_TOKEN = 'your_token_here'" $Yellow
+try {
+    # Login to GitHub Container Registry
+    Write-Host "Logging in to GitHub Container Registry..." -ForegroundColor Yellow
+    echo $TOKEN | docker login $REGISTRY -u $USERNAME --password-stdin
+    
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker login failed"
+    }
+    
+    Write-Host "Login successful!" -ForegroundColor Green
+    
+    # Build Docker image
+    Write-Host "Building Docker image: $FULL_IMAGE_PATH..." -ForegroundColor Yellow
+    docker build -t $FULL_IMAGE_PATH .
+    
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker build failed"
+    }
+    
+    Write-Host "Build successful!" -ForegroundColor Green
+    
+    # Push Docker image
+    Write-Host "Pushing Docker image to registry..." -ForegroundColor Yellow
+    docker push $FULL_IMAGE_PATH
+    
+    if ($LASTEXITCODE -ne 0) {
+        throw "Docker push failed"
+    }
+    
+    Write-Host "Push successful!" -ForegroundColor Green
+    Write-Host "Docker image published to: $FULL_IMAGE_PATH" -ForegroundColor Cyan
+    
+    # Also tag as latest if version is not latest
+    if ($VERSION -ne "latest") {
+        $LATEST_IMAGE_PATH = "${REGISTRY}/${USERNAME}/${IMAGE_NAME}:latest"
+        Write-Host "Tagging as latest: $LATEST_IMAGE_PATH..." -ForegroundColor Yellow
+        docker tag $FULL_IMAGE_PATH $LATEST_IMAGE_PATH
+        docker push $LATEST_IMAGE_PATH
+        Write-Host "Latest tag pushed successfully!" -ForegroundColor Green
+    }
+    
+} catch {
+    Write-Host "Error: $($_.Exception.Message)" -ForegroundColor Red
     exit 1
 }
 
-$FullImageName = "$Registry/$Username/$ImageName`:$Version"
-
-Write-ColorOutput "=== Building and Pushing Docker Image ===" $Green
-Write-ColorOutput "Image: $FullImageName" $Yellow
-
-# Login to GitHub Container Registry
-Write-ColorOutput "Logging in to $Registry..." $Green
-echo $env:GITHUB_TOKEN | docker login $Registry -u $Username --password-stdin
-
-if ($LASTEXITCODE -ne 0) {
-    Write-ColorOutput "Error: Failed to login to $Registry" $Red
-    exit 1
-}
-
-# Build Docker image
-Write-ColorOutput "Building Docker image..." $Green
-docker build -t $FullImageName .
-
-if ($LASTEXITCODE -ne 0) {
-    Write-ColorOutput "Error: Failed to build Docker image" $Red
-    exit 1
-}
-
-# Push Docker image
-Write-ColorOutput "Pushing Docker image to registry..." $Green
-docker push $FullImageName
-
-if ($LASTEXITCODE -ne 0) {
-    Write-ColorOutput "Error: Failed to push Docker image" $Red
-    exit 1
-}
-
-Write-ColorOutput "=== Successfully built and pushed $FullImageName ===" $Green
-
-# Optional: Tag as latest if version is not latest
-if ($Version -ne "latest") {
-    $LatestImageName = "$Registry/$Username/$ImageName`:latest"
-    Write-ColorOutput "Tagging as latest..." $Green
-    docker tag $FullImageName $LatestImageName
-    docker push $LatestImageName
-    Write-ColorOutput "Also pushed as: $LatestImageName" $Green
-} 
+Write-Host "Process completed successfully!" -ForegroundColor Green 
