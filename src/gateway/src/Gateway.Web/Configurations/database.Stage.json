@@ -1,0 +1,6 @@
+{
+  "DatabaseSettings": {
+    "DBProvider": "postgresql",
+    "ConnectionString": "Host=database;Port=5432;Database=Messaging;Username=postgres;Password=postgres;PersistSecurityInfo=True;Include Error Detail=true"
+  }
+}

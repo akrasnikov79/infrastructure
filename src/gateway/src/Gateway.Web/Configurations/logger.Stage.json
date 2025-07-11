@@ -1,0 +1,11 @@
+{
+  "JaegerUrl": "http://localhost:4317",
+  "LoggerSettings": {
+    "AppName": "OpenIDConnect",
+    "ElasticSearchUrl": "http://elastic:9200",
+    "ElasticUsername": "elastic",
+    "ElasticPassword": "Fnw7GDLjwHpzbF",
+    "WriteToFile": true,
+    "StructuredConsoleLogging": false
+  }
+}
