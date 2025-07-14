@@ -1,0 +1,14 @@
+{
+  "SwaggerSettings": {
+    "Enable": true,
+    "Title": "OpenIdConnect",
+    "Version": "1.0.0",
+    "Description": "oauth 2.0",
+    "ContactName": "",
+    "ContactEmail": "admin@gmail.com",
+    "ContactUrl": "https://www.linkedin.com/in/akrasnikov/",
+    "License": true,
+    "LicenseName": "",
+    "LicenseUrl": ""
+  }
+}

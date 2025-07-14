@@ -1,0 +1,36 @@
+version: '3.9'
+
+services: 
+  nginx:
+    image: nginx:1.25
+    container_name: nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - infrastructure-network
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      - gateway-api
+
+  gateway-api:
+    image: ghcr.io/akrasnikov79/gateway-service:latest
+    container_name: gateway-api
+    ports:
+      - "5000:8080"
+    networks:
+      - infrastructure-network
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080
+
+networks: 
+  keycloak-network:
+    external: true
+
+  infrastructure-network:
+    external: true 
+
+volumes:
+  nginx-data:

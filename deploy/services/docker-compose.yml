@@ -25,4 +25,5 @@ volumes:
   
 
 networks:
-  infrastructure:
+  infrastructure-network:
+    external: true 

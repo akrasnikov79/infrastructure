@@ -1,0 +1,39 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/{version}/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "proxy.keycloak",
+          "Port": 8010
+        }
+      ],
+      "DownstreamHeaderTransform": {
+        "Location": "{DownstreamBaseUrl}, {BaseUrl}/sso-api/"
+      },
+      "UpstreamHeaderTransform": {
+        "X-Forwarded-For": "{RemoteIpAddress}"
+      },
+
+      "UpstreamPathTemplate": "/sso-api/{version}/{everything}",
+      "UpstreamHttpMethod": [],
+      "HttpHandlerOptions": {
+        "AllowAutoRedirect": false
+      }
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "https://*:8000",
+    "HttpsOptions": {
+      "SslPort": 5030,
+      "KeyStore": "/https/prominer.pfx",
+      "KeyStorePassword": "12345678"
+    },
+    "ServiceDiscoveryProvider": {
+      "Host": "gateway",
+      "Port": 5030,
+      "PollingInterval": 5000
+    }
+  }
+}

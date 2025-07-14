@@ -1,0 +1,53 @@
+{
+  "Routes": [
+    {
+      "DownstreamPathTemplate": "/api/{version}/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "proxy-keycloak",
+          "Port": 8020
+        }
+      ],
+
+      "UpstreamHeaderTransform": {
+        "X-Forwarded-For": "{RemoteIpAddress}"
+      },
+
+      "UpstreamPathTemplate": "/auth-service/{version}/{everything}",
+      "UpstreamHttpMethod": [],
+      "HttpHandlerOptions": {
+        "AllowAutoRedirect": false
+      }
+    },
+    {
+      "DownstreamPathTemplate": "/api/{version}/{everything}",
+      "DownstreamScheme": "http",
+      "DownstreamHostAndPorts": [
+        {
+          "Host": "user-profile",
+          "Port": 8030
+        }
+      ],
+
+      "UpstreamHeaderTransform": {
+        "X-Forwarded-For": "{RemoteIpAddress}"
+      },
+
+      "UpstreamPathTemplate": "/user-profile/{version}/{everything}",
+      "UpstreamHttpMethod": [],
+      "HttpHandlerOptions": {
+        "AllowAutoRedirect": false
+      }
+    }
+  ],
+  "GlobalConfiguration": {
+    "BaseUrl": "http://*:8010"
+  },
+  "RateLimitOptions": {
+    "EnableRateLimiting": true,
+    "Period": "10s",
+    "PeriodTimespan": 10,
+    "Limit": 100
+  }
+}

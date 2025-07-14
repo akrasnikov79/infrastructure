@@ -1,0 +1,14 @@
+{
+  "SwaggerSettings": {
+    "Enable": true,
+    "Title": "messaging-system",
+    "Version": "1.0.0",
+    "Description": "messaging-system documentation",
+    "ContactName": "",
+    "ContactEmail": "aleksey.mir79@gmail.com",
+    "ContactUrl": "https://www.linkedin.com/in/akrasnikov/",
+    "License": true,
+    "LicenseName": "",
+    "LicenseUrl": ""
+  }
+}
