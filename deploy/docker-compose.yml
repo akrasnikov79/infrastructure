@@ -1,6 +1,16 @@
- 
+version: '3.9'
 
-services:  
+services:
+  dozzle:
+    image: amir20/dozzle:latest
+    container_name: dozzle
+    ports:
+      - "9999:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./data:/data
+    environment:
+      DOZZLE_AUTH_PROVIDER: simple     
 
 networks:
   infrastructure-network:
