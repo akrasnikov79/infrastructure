@@ -10,9 +10,7 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock
       - ./data:/data
     environment:
-      DOZZLE_AUTH_PROVIDER: simple
-    networks:
-      - infrastructure-network
+      DOZZLE_AUTH_PROVIDER: simple     
 
 networks:
   infrastructure-network:
