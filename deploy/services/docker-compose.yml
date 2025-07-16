@@ -1,27 +1,23 @@
-version: '3.9'
 
 services:
-  proxy-keycloak:
-    container_name: proxy-keycloak
-    image: services/services.proxy.keycloak:1.0
+  admin-sync-service:
+    container_name: admin-sync-service
+    image: ghcr.io/akrasnikov79/admin-sync-service:latest
     ports:
-      - "9090:9090"
-    build:
-      context: .
-      dockerfile: ./src/Proxy.Keycloak.Web/Dockerfile
+      - "9020:9020" 
+    volumes: 
+      - admin-sync-service-data:/opt/admin-sync/admin-sync-data
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      # - TZ=Asia/Karachi
+      - ASPNETCORE_URLS=http://+:9020
+      - ASPNETCORE_ENVIRONMENT=Stage
+      - TZ=Asia/Karachi
     restart: always
-    
-      
+    networks:
+      - infrastructure-network
+     
 
 volumes:
-  services_volume:
-    driver_opts:
-      type: none
-      device: /var/services
-      o: bind
+  admin-sync-service-data:
   
 
 networks:

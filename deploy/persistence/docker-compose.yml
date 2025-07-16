@@ -23,9 +23,9 @@ services:
       timeout: 5s
       retries: 5 
 
-  oracle-free-local:
+  oracle-free:
     image: gvenzl/oracle-free:latest
-    container_name: oracle-free-local
+    container_name: oracle-free
     environment:
       - ORACLE_PASSWORD=oracle
       - ORACLE_CHARACTERSET=AL32UTF8
