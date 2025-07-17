@@ -63,9 +63,7 @@ services:
       VALUE_CONVERTER: org.apache.kafka.connect.json.JsonConverter
       KEY_CONVERTER_SCHEMAS_ENABLE: "false"
       VALUE_CONVERTER_SCHEMAS_ENABLE: "false"
-    depends_on:
-      oracle-free-local:
-        condition: service_healthy
+    depends_on:       
       kafka-local:
         condition: service_started
     networks:
@@ -79,9 +77,7 @@ services:
     environment:
       KAFKA_CLUSTERS_0_NAME: local
       KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
-      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
-    depends_on:
-      - kafka-local
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181    
     networks:
       - debezium-network
 
