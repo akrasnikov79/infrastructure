@@ -8,7 +8,7 @@ services:
     volumes: 
       - admin-sync-service-data:/opt/admin-sync/admin-sync-data
     environment:
-      - ASPNETCORE_URLS=http://+:9020
+      - ASPNETCORE_URLS=http://+:80
       - ASPNETCORE_ENVIRONMENT=Stage
       - TZ=Asia/Karachi
     restart: always
