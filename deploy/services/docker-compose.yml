@@ -17,9 +17,14 @@ services:
      
 
 volumes:
-  admin-sync-service-data:
-  
+  admin-sync-service-data: 
 
 networks:
   infrastructure-network:
     external: true 
+  
+  docker-elk_elk:
+    external: true
+  
+  elk:
+    external: true
