@@ -4,7 +4,7 @@ services:
     container_name: admin-sync-service
     image: ghcr.io/akrasnikov79/admin-sync-service:latest
     ports:
-      - "80:80" 
+      - "8080:80" 
     volumes: 
       - admin-sync-service-data:/opt/admin-sync/admin-sync-data
     environment:
